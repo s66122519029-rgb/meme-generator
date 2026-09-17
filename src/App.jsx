@@ -1,38 +1,43 @@
 import { useState, useRef } from 'react';
-import { toPng } from 'html-to-image';
 
+// คลังมีม 10 ตัวจริงตามแถบในรูป
 const TEMPLATES = [
-  {
-    id: 1,
-    name: 'Distracted Boyfriend',
-    url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop&q=80'
-  },
-  {
-    id: 2,
-    name: 'Running Away Balloon',
-    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80'
-  },
-  {
-    id: 3,
-    name: 'Two Buttons',
-    url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&auto=format&fit=crop&q=80'
-  }
+  { id: 1, name: 'This Is Sparta', url: 'https://api.memegen.link/images/sparta.png' },
+  { id: 2, name: 'Drake Hotline Bling', url: 'https://api.memegen.link/images/drake.png' },
+  { id: 3, name: 'Two Buttons', url: 'https://api.memegen.link/images/two-buttons.png' },
+  { id: 4, name: 'Distracted Boyfriend', url: 'https://api.memegen.link/images/distracted.png' },
+  { id: 5, name: 'I Am Once Again Asking', url: 'https://api.memegen.link/images/bernie.png' },
+  { id: 6, name: 'UNO Draw 25 Cards', url: 'https://api.memegen.link/images/draw-25.png' },
+  { id: 7, name: 'Left Exit 12 Off Ramp', url: 'https://api.memegen.link/images/exit-12.png' },
+  { id: 8, name: 'Always Has Been', url: 'https://api.memegen.link/images/astronaut.png' },
+  { id: 9, name: 'Epic Handshake', url: 'https://api.memegen.link/images/handshake.png' },
+  { id: 10, name: "Gru's Plan", url: 'https://api.memegen.link/images/gru.png' }
 ];
 
 export default function App() {
-  const [selectedMeme, setSelectedMeme] = useState(TEMPLATES[0]);
-  const [image, setImage] = useState(TEMPLATES[0].url);
+  const [selectedMeme, setSelectedMeme] = useState(TEMPLATES[1]);
+  const [image, setImage] = useState(TEMPLATES[1].url);
   const [activeBox, setActiveBox] = useState(null);
   const [watermark, setWatermark] = useState(true);
 
   const [texts, setTexts] = useState([
-    { id: 1, text: '', color: '#ffffff', stroke: '#000000', size: 28, x: 40, y: 190, w: 180, h: 80 },
-    { id: 2, text: '', color: '#ffffff', stroke: '#000000', size: 28, x: 230, y: 150, w: 170, h: 80 },
-    { id: 3, text: '', color: '#ffffff', stroke: '#000000', size: 28, x: 430, y: 180, w: 160, h: 80 }
+    { id: 1, text: '', color: '#ffffff', stroke: '#000000', size: 28, x: 260, y: 40, w: 220, h: 70 },
+    { id: 2, text: '', color: '#ffffff', stroke: '#000000', size: 28, x: 260, y: 220, w: 220, h: 70 },
+    { id: 3, text: '', color: '#ffffff', stroke: '#000000', size: 28, x: 50, y: 320, w: 180, h: 60 }
   ]);
 
-  const memeRef = useRef(null);
+  const carouselRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  // ปุ่มกดเลื่อนซ้าย-ขวาของแถบรูป
+  const scrollCarousel = (direction) => {
+    if (carouselRef.current) {
+      carouselRef.current.scrollBy({
+        left: direction === 'left' ? -180 : 180,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   const updateText = (id, key, val) => {
     setTexts(texts.map((t) => (t.id === id ? { ...t, [key]: val } : t)));
@@ -69,26 +74,58 @@ export default function App() {
 
   const handleReset = () => {
     setTexts([
-      { id: 1, text: '', color: '#ffffff', stroke: '#000000', size: 28, x: 40, y: 190, w: 180, h: 80 },
-      { id: 2, text: '', color: '#ffffff', stroke: '#000000', size: 28, x: 230, y: 150, w: 170, h: 80 },
-      { id: 3, text: '', color: '#ffffff', stroke: '#000000', size: 28, x: 430, y: 180, w: 160, h: 80 }
+      { id: 1, text: '', color: '#ffffff', stroke: '#000000', size: 28, x: 260, y: 40, w: 220, h: 70 },
+      { id: 2, text: '', color: '#ffffff', stroke: '#000000', size: 28, x: 260, y: 220, w: 220, h: 70 },
+      { id: 3, text: '', color: '#ffffff', stroke: '#000000', size: 28, x: 50, y: 320, w: 180, h: 60 }
     ]);
   };
 
-  const handleGenerate = async () => {
-    if (!memeRef.current) return;
-    setActiveBox(null);
-    setTimeout(async () => {
-      try {
-        const dataUrl = await toPng(memeRef.current, { cacheBust: true });
-        const a = document.createElement('a');
-        a.download = 'imgflip-meme.png';
-        a.href = dataUrl;
-        a.click();
-      } catch {
-        alert('Download failed. Ensure image is loaded properly.');
+  // ดาวน์โหลดด้วย Canvas ไม่ต้องพึ่ง html-to-image
+  const handleGenerate = () => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = image;
+
+    img.onload = () => {
+      canvas.width = 600;
+      canvas.height = 420;
+
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      texts.forEach((t) => {
+        if (!t.text) return;
+        ctx.font = `bold ${t.size}px Impact, Arial Black, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const posX = t.x + t.w / 2;
+        const posY = t.y + t.h / 2;
+
+        ctx.strokeStyle = t.stroke;
+        ctx.lineWidth = 4;
+        ctx.strokeText(t.text.toUpperCase(), posX, posY);
+
+        ctx.fillStyle = t.color;
+        ctx.fillText(t.text.toUpperCase(), posX, posY);
+      });
+
+      if (watermark) {
+        ctx.font = 'bold 12px Arial, sans-serif';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.fillText('imgflip.com', 45, canvas.height - 12);
       }
-    }, 50);
+
+      const link = document.createElement('a');
+      link.download = `${selectedMeme.name.toLowerCase().replace(/\s+/g, '-')}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    };
+
+    img.onerror = () => {
+      alert('Failed to process image. Upload an image from your computer to test safely.');
+    };
   };
 
   return (
@@ -107,8 +144,8 @@ export default function App() {
 
       <div style={{ display: 'flex', gap: '20px' }}>
         
-        {/* Left Column: Canvas */}
-        <div style={{ flex: '1 1 58%' }}>
+        {/* Left Column: Canvas Preview */}
+        <div style={{ flex: '1 1 56%' }}>
           <div style={{ display: 'flex', gap: '4px', marginBottom: '6px' }}>
             <button style={toolBtn}>↺</button>
             <button style={toolBtn}>Spacing</button>
@@ -117,12 +154,11 @@ export default function App() {
           </div>
 
           <div
-            ref={memeRef}
             onClick={() => setActiveBox(null)}
             style={{
               position: 'relative',
               width: '100%',
-              height: '400px',
+              height: '420px',
               backgroundColor: '#eee',
               overflow: 'hidden',
               userSelect: 'none',
@@ -133,12 +169,12 @@ export default function App() {
           >
             <img
               src={image}
-              alt="Meme Base"
+              alt="Meme"
               crossOrigin="anonymous"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#222' }}
             />
 
-            {/* Draggable Bounding Boxes */}
+            {/* Draggable Text Boxes with Handles */}
             {texts.map((t) => {
               const selected = activeBox === t.id;
               return (
@@ -184,15 +220,12 @@ export default function App() {
                       <div style={{ ...nodeHandle, bottom: -5, right: -5 }} />
                       <div style={{ ...nodeHandle, top: '50%', left: -5, transform: 'translateY(-50%)' }} />
                       <div style={{ ...nodeHandle, top: '50%', right: -5, transform: 'translateY(-50%)' }} />
-                      <div style={{ ...nodeHandle, top: -5, left: '50%', transform: 'translateX(-50%)' }} />
-                      <div style={{ ...nodeHandle, bottom: -5, left: '50%', transform: 'translateX(-50%)' }} />
                     </>
                   )}
                 </div>
               );
             })}
 
-            {/* Imgflip Bottom Left Watermark */}
             {watermark && (
               <div style={{ position: 'absolute', bottom: '6px', left: '8px', color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontWeight: 'bold', textShadow: '1px 1px 1px #000' }}>
                 imgflip.com
@@ -201,11 +234,11 @@ export default function App() {
           </div>
         </div>
 
-        {/* Right Column: Imgflip Toolbar */}
-        <div style={{ flex: '1 1 42%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {/* Right Column: Imgflip Toolbar with Scrollable Carousel */}
+        <div style={{ flex: '1 1 44%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontWeight: 'bold', fontSize: '14px' }}>{selectedMeme.name}</span>
+            <span style={{ fontWeight: 'bold', fontSize: '15px' }}>{selectedMeme.name}</span>
             <div style={{ display: 'flex', border: '1px solid #ccc', borderRadius: '3px', overflow: 'hidden' }}>
               <button style={tabStyle}>My</button>
               <button style={tabStyle}>Hot</button>
@@ -213,29 +246,50 @@ export default function App() {
             </div>
           </div>
 
-          {/* Preset Buttons & Thumbnails Strip */}
-          <div style={{ display: 'flex', gap: '4px', alignItems: 'center', overflowX: 'auto', paddingBottom: '4px', borderBottom: '1px solid #eee' }}>
-            <button style={presetBtn}>Blank</button>
-            <button style={presetBtn}>✨ AI</button>
-            <button style={presetBtn}>🔀</button>
-            {TEMPLATES.map((tpl) => (
-              <img
-                key={tpl.id}
-                src={tpl.url}
-                alt={tpl.name}
-                onClick={() => { setSelectedMeme(tpl); setImage(tpl.url); }}
-                style={{
-                  width: '48px',
-                  height: '36px',
-                  objectFit: 'cover',
-                  cursor: 'pointer',
-                  border: selectedMeme.id === tpl.id ? '2px solid #0088cc' : '1px solid #ccc'
-                }}
-              />
-            ))}
+          {/* แถบเลื่อนรูปภาพมีม (Scrollable Meme Bar) */}
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <button onClick={() => scrollCarousel('left')} style={arrowBtnStyle} title="Scroll Left">◀</button>
+
+            <div
+              ref={carouselRef}
+              style={{
+                display: 'flex',
+                gap: '6px',
+                overflowX: 'scroll',
+                scrollBehavior: 'smooth',
+                padding: '4px 0',
+                width: '100%'
+              }}
+            >
+              {TEMPLATES.map((tpl) => (
+                <div
+                  key={tpl.id}
+                  onClick={() => { setSelectedMeme(tpl); setImage(tpl.url); }}
+                  style={{
+                    flexShrink: 0,
+                    width: '56px',
+                    height: '42px',
+                    border: selectedMeme.id === tpl.id ? '2px solid #0088cc' : '1px solid #ccc',
+                    borderRadius: '2px',
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    background: '#f2f2f2'
+                  }}
+                  title={tpl.name}
+                >
+                  <img
+                    src={tpl.url}
+                    alt={tpl.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <button onClick={() => scrollCarousel('right')} style={arrowBtnStyle} title="Scroll Right">▶</button>
           </div>
 
-          {/* Text Input Rows */}
+          {/* กล่องข้อความ Text #1, #2, #3 */}
           {texts.map((t, idx) => (
             <div key={t.id} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
               <input
@@ -273,7 +327,7 @@ export default function App() {
             </div>
           ))}
 
-          {/* Action Tools Row */}
+          {/* ปุ่มเครื่องมือเสริม */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
             <span style={{ fontSize: '11px', color: '#555' }}>
               Tip: If you <a href="#login" style={{ color: '#0088cc' }}>log in</a>, your memes will be saved in your account
@@ -286,7 +340,7 @@ export default function App() {
                 onClick={() =>
                   setTexts([
                     ...texts,
-                    { id: Date.now(), text: '', color: '#ffffff', stroke: '#000000', size: 28, x: 100, y: 150, w: 160, h: 80 }
+                    { id: Date.now(), text: '', color: '#ffffff', stroke: '#000000', size: 28, x: 100, y: 150, w: 180, h: 60 }
                   ])
                 }
               >
@@ -295,7 +349,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* Imgflip Settings Checkboxes */}
+          {/* Checkbox Options */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '12px', color: '#333', marginTop: '4px' }}>
             <label><input type="checkbox" /> Use original image resolution (higher)</label>
             <label><input type="checkbox" /> Private (must download image to save or share)</label>
@@ -305,7 +359,7 @@ export default function App() {
             </label>
           </div>
 
-          {/* Main Action Buttons */}
+          {/* Action Buttons */}
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px', alignItems: 'center' }}>
             <button
               onClick={handleGenerate}
@@ -348,7 +402,7 @@ export default function App() {
 const outlineBtn = { background: '#fff', border: '1px solid #ccc', padding: '6px 14px', fontSize: '13px', cursor: 'pointer', borderRadius: '3px' };
 const toolBtn = { background: '#fff', border: '1px solid #ccc', padding: '4px 8px', fontSize: '12px', cursor: 'pointer', borderRadius: '3px' };
 const tabStyle = { background: '#fff', border: 'none', padding: '4px 8px', fontSize: '12px', cursor: 'pointer' };
-const presetBtn = { border: '1px dashed #bbb', background: '#fafafa', padding: '8px 10px', fontSize: '11px', cursor: 'pointer', borderRadius: '2px' };
+const arrowBtnStyle = { background: '#eee', border: '1px solid #ccc', borderRadius: '2px', cursor: 'pointer', padding: '6px 4px', fontSize: '10px', color: '#555', zIndex: 2 };
 const colorBox = { width: '30px', height: '30px', border: '1px solid #ccc', borderRadius: '3px', cursor: 'pointer', padding: '0' };
 const gearBtn = { width: '30px', height: '30px', border: '1px solid #ccc', borderRadius: '3px', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px' };
 const toolActionBtn = { background: '#fff', border: '1px solid #ccc', borderRadius: '3px', padding: '3px 8px', fontSize: '12px', cursor: 'pointer' };
