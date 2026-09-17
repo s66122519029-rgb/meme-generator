@@ -1,17 +1,17 @@
 import { useState, useRef } from 'react';
 
-// คลังมีม 10 ตัวจริงตามแถบในรูป
+// คลังมีม 10 ตัวจริงจาก CDN ของ Imgflip โดยตรง
 const TEMPLATES = [
-  { id: 1, name: 'This Is Sparta', url: 'https://api.memegen.link/images/sparta.png' },
-  { id: 2, name: 'Drake Hotline Bling', url: 'https://api.memegen.link/images/drake.png' },
-  { id: 3, name: 'Two Buttons', url: 'https://api.memegen.link/images/two-buttons.png' },
-  { id: 4, name: 'Distracted Boyfriend', url: 'https://api.memegen.link/images/distracted.png' },
-  { id: 5, name: 'I Am Once Again Asking', url: 'https://api.memegen.link/images/bernie.png' },
-  { id: 6, name: 'UNO Draw 25 Cards', url: 'https://api.memegen.link/images/draw-25.png' },
-  { id: 7, name: 'Left Exit 12 Off Ramp', url: 'https://api.memegen.link/images/exit-12.png' },
-  { id: 8, name: 'Always Has Been', url: 'https://api.memegen.link/images/astronaut.png' },
-  { id: 9, name: 'Epic Handshake', url: 'https://api.memegen.link/images/handshake.png' },
-  { id: 10, name: "Gru's Plan", url: 'https://api.memegen.link/images/gru.png' }
+  { id: 1, name: 'This Is Sparta', url: 'https://i.imgflip.com/4acd7j.png' },
+  { id: 2, name: 'Drake Hotline Bling', url: 'https://i.imgflip.com/30b1gx.jpg' },
+  { id: 3, name: 'Two Buttons', url: 'https://i.imgflip.com/1g8my4.jpg' },
+  { id: 4, name: 'Distracted Boyfriend', url: 'https://i.imgflip.com/1ur9b0.jpg' },
+  { id: 5, name: 'Bernie I Am Once Again Asking', url: 'https://i.imgflip.com/3oevdk.jpg' },
+  { id: 6, name: 'UNO Draw 25 Cards', url: 'https://i.imgflip.com/3lmzyx.jpg' },
+  { id: 7, name: 'Left Exit 12 Off Ramp', url: 'https://i.imgflip.com/22bdq6.jpg' },
+  { id: 8, name: 'Always Has Been', url: 'https://i.imgflip.com/46e43q.png' },
+  { id: 9, name: 'Epic Handshake', url: 'https://i.imgflip.com/28j0te.jpg' },
+  { id: 10, name: "Gru's Plan", url: 'https://i.imgflip.com/26jxvz.jpg' }
 ];
 
 export default function App() {
@@ -29,7 +29,6 @@ export default function App() {
   const carouselRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // ปุ่มกดเลื่อนซ้าย-ขวาของแถบรูป
   const scrollCarousel = (direction) => {
     if (carouselRef.current) {
       carouselRef.current.scrollBy({
@@ -80,7 +79,6 @@ export default function App() {
     ]);
   };
 
-  // ดาวน์โหลดด้วย Canvas ไม่ต้องพึ่ง html-to-image
   const handleGenerate = () => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -124,7 +122,7 @@ export default function App() {
     };
 
     img.onerror = () => {
-      alert('Failed to process image. Upload an image from your computer to test safely.');
+      alert('Cannot load image. Please upload a local image file instead.');
     };
   };
 
@@ -174,7 +172,6 @@ export default function App() {
               style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#222' }}
             />
 
-            {/* Draggable Text Boxes with Handles */}
             {texts.map((t) => {
               const selected = activeBox === t.id;
               return (
@@ -246,7 +243,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* แถบเลื่อนรูปภาพมีม (Scrollable Meme Bar) */}
+          {/* Scrollable Meme Carousel */}
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <button onClick={() => scrollCarousel('left')} style={arrowBtnStyle} title="Scroll Left">◀</button>
 
@@ -280,6 +277,7 @@ export default function App() {
                   <img
                     src={tpl.url}
                     alt={tpl.name}
+                    crossOrigin="anonymous"
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                 </div>
@@ -289,7 +287,7 @@ export default function App() {
             <button onClick={() => scrollCarousel('right')} style={arrowBtnStyle} title="Scroll Right">▶</button>
           </div>
 
-          {/* กล่องข้อความ Text #1, #2, #3 */}
+          {/* Text Input Rows */}
           {texts.map((t, idx) => (
             <div key={t.id} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
               <input
@@ -327,7 +325,7 @@ export default function App() {
             </div>
           ))}
 
-          {/* ปุ่มเครื่องมือเสริม */}
+          {/* Sub Controls */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
             <span style={{ fontSize: '11px', color: '#555' }}>
               Tip: If you <a href="#login" style={{ color: '#0088cc' }}>log in</a>, your memes will be saved in your account
@@ -359,7 +357,7 @@ export default function App() {
             </label>
           </div>
 
-          {/* Action Buttons */}
+          {/* Buttons */}
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px', alignItems: 'center' }}>
             <button
               onClick={handleGenerate}
