@@ -2,123 +2,130 @@ import { useState, useRef } from 'react';
 import { toPng } from 'html-to-image';
 
 const TEMPLATES = [
-  { 
-    id: 1, 
-    name: 'Smile', 
-    url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='500' height='400' viewBox='0 0 500 400'><rect width='100%' height='100%' fill='%23f1c40f'/><circle cx='180' cy='150' r='30' fill='%232c3e50'/><circle cx='320' cy='150' r='30' fill='%232c3e50'/><path d='M 150 250 Q 250 340 350 250' stroke='%232c3e50' stroke-width='20' fill='none' stroke-linecap='round'/></svg>"
+  {
+    id: 1,
+    name: 'Distracted Boyfriend',
+    url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop&q=80'
   },
-  { 
-    id: 2, 
-    name: 'Cool Cat', 
-    url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='500' height='400' viewBox='0 0 500 400'><rect width='100%' height='100%' fill='%233498db'/><polygon points='140,80 180,180 100,160' fill='%23e67e22'/><polygon points='360,80 320,180 400,160' fill='%23e67e22'/><circle cx='250' cy='220' r='100' fill='%23e67e22'/><circle cx='210' cy='200' r='18' fill='%23fff'/><circle cx='290' cy='200' r='18' fill='%23fff'/><polygon points='250,230 240,245 260,245' fill='%23e74c3c'/></svg>"
+  {
+    id: 2,
+    name: 'Running Away Balloon',
+    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80'
   },
-  { 
-    id: 3, 
-    name: 'Surprise Dog', 
-    url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='500' height='400' viewBox='0 0 500 400'><rect width='100%' height='100%' fill='%23e74c3c'/><ellipse cx='250' cy='230' rx='110' ry='90' fill='%23ecf0f1'/><ellipse cx='160' cy='180' rx='25' ry='55' fill='%23bdc3c7'/><ellipse cx='340' cy='180' rx='25' ry='55' fill='%23bdc3c7'/><circle cx='210' cy='210' r='14' fill='%232c3e50'/><circle cx='290' cy='210' r='14' fill='%232c3e50'/><ellipse cx='250' cy='260' rx='25' ry='18' fill='%23e67e22'/></svg>"
+  {
+    id: 3,
+    name: 'Two Buttons',
+    url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&auto=format&fit=crop&q=80'
   }
 ];
 
 export default function App() {
+  const [selectedMeme, setSelectedMeme] = useState(TEMPLATES[0]);
   const [image, setImage] = useState(TEMPLATES[0].url);
-  
-  const [topText, setTopText] = useState('TOP TEXT');
-  const [bottomText, setBottomText] = useState('BOTTOM TEXT');
-  const [fontSize, setFontSize] = useState(32);
-  const [textColor, setTextColor] = useState('#ffffff');
-  
-  const [topPos, setTopPos] = useState({ x: 0, y: 15 });
-  const [bottomPos, setBottomPos] = useState({ x: 0, y: 320 });
+  const [activeBox, setActiveBox] = useState(null);
+  const [watermark, setWatermark] = useState(true);
 
-  const [brightness, setBrightness] = useState(100);
-  const [contrast, setContrast] = useState(100);
-  const [grayscale, setGrayscale] = useState(0);
-
-  const [stickers, setStickers] = useState([]);
+  const [texts, setTexts] = useState([
+    { id: 1, text: '', color: '#ffffff', stroke: '#000000', size: 28, x: 40, y: 190, w: 180, h: 80 },
+    { id: 2, text: '', color: '#ffffff', stroke: '#000000', size: 28, x: 230, y: 150, w: 170, h: 80 },
+    { id: 3, text: '', color: '#ffffff', stroke: '#000000', size: 28, x: 430, y: 180, w: 160, h: 80 }
+  ]);
 
   const memeRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  const updateText = (id, key, val) => {
+    setTexts(texts.map((t) => (t.id === id ? { ...t, [key]: val } : t)));
+  };
 
   const handleUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setImage(URL.createObjectURL(file));
+      const url = URL.createObjectURL(file);
+      setImage(url);
+      setSelectedMeme({ id: 99, name: file.name, url });
     }
   };
 
-  const addEmoji = (emoji) => {
-    setStickers([...stickers, { id: Date.now(), char: emoji, x: 50, y: 50 }]);
-  };
-
-  const removeSticker = (id) => {
-    setStickers(stickers.filter((s) => s.id !== id));
-  };
-
-  const handleDrag = (e, setPosition, currentPos) => {
+  const handleDrag = (e, id, currentPos) => {
+    e.stopPropagation();
+    setActiveBox(id);
     const startX = e.clientX;
     const startY = e.clientY;
 
-    const onMouseMove = (moveEvent) => {
-      const dx = moveEvent.clientX - startX;
-      const dy = moveEvent.clientY - startY;
-      setPosition({
-        x: currentPos.x + dx,
-        y: currentPos.y + dy
-      });
+    const onMove = (me) => {
+      updateText(id, 'x', currentPos.x + (me.clientX - startX));
+      updateText(id, 'y', currentPos.y + (me.clientY - startY));
     };
 
-    const onMouseUp = () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
     };
 
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
   };
 
-  const handleDownload = async () => {
+  const handleReset = () => {
+    setTexts([
+      { id: 1, text: '', color: '#ffffff', stroke: '#000000', size: 28, x: 40, y: 190, w: 180, h: 80 },
+      { id: 2, text: '', color: '#ffffff', stroke: '#000000', size: 28, x: 230, y: 150, w: 170, h: 80 },
+      { id: 3, text: '', color: '#ffffff', stroke: '#000000', size: 28, x: 430, y: 180, w: 160, h: 80 }
+    ]);
+  };
+
+  const handleGenerate = async () => {
     if (!memeRef.current) return;
-    try {
-      const dataUrl = await toPng(memeRef.current);
-      const link = document.createElement('a');
-      link.download = 'meme.png';
-      link.href = dataUrl;
-      link.click();
-    } catch (err) {
-      alert('Failed to save image.');
-    }
-  };
-
-  const memeTextStyle = {
-    position: 'absolute',
-    color: textColor,
-    fontSize: `${fontSize}px`,
-    fontWeight: '900',
-    fontFamily: 'Impact, Arial Black, sans-serif',
-    textTransform: 'uppercase',
-    textShadow: '2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0px 2px 0 #000, 0px -2px 0 #000',
-    cursor: 'move',
-    userSelect: 'none',
-    textAlign: 'center',
-    width: '100%',
-    left: 0
+    setActiveBox(null);
+    setTimeout(async () => {
+      try {
+        const dataUrl = await toPng(memeRef.current, { cacheBust: true });
+        const a = document.createElement('a');
+        a.download = 'imgflip-meme.png';
+        a.href = dataUrl;
+        a.click();
+      } catch {
+        alert('Download failed. Ensure image is loaded properly.');
+      }
+    }, 50);
   };
 
   return (
-    <div style={{ maxWidth: '850px', margin: '20px auto', fontFamily: 'Arial, sans-serif', padding: '16px' }}>
-      <h2 style={{ textAlign: 'center' }}>Tiny Meme Generator</h2>
+    <div style={{ maxWidth: '1080px', margin: '20px auto', background: '#fff', border: '1px solid #d3d3d3', fontFamily: 'Arial, Helvetica, sans-serif', padding: '16px', boxSizing: 'border-box' }}>
+      
+      {/* Header Controls */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={() => fileInputRef.current.click()} style={outlineBtn}>Upload new template</button>
+          <input type="file" ref={fileInputRef} onChange={handleUpload} accept="image/*" style={{ display: 'none' }} />
+        </div>
+        <div>
+          <input type="text" placeholder="Search all memes" style={{ padding: '6px 10px', border: '1px solid #ccc', borderRadius: '3px', width: '220px', fontSize: '13px' }} />
+        </div>
+      </div>
 
-      <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-        {/* ส่วนแสดงตัวอย่างรูปมีม */}
-        <div style={{ flex: 1, minWidth: '350px' }}>
+      <div style={{ display: 'flex', gap: '20px' }}>
+        
+        {/* Left Column: Canvas */}
+        <div style={{ flex: '1 1 58%' }}>
+          <div style={{ display: 'flex', gap: '4px', marginBottom: '6px' }}>
+            <button style={toolBtn}>↺</button>
+            <button style={toolBtn}>Spacing</button>
+            <button style={toolBtn} onClick={() => fileInputRef.current.click()}>📷 Add Image</button>
+            <button style={toolBtn}>Draw</button>
+          </div>
+
           <div
             ref={memeRef}
+            onClick={() => setActiveBox(null)}
             style={{
               position: 'relative',
               width: '100%',
               height: '400px',
-              backgroundColor: '#111',
-              borderRadius: '8px',
+              backgroundColor: '#eee',
               overflow: 'hidden',
+              userSelect: 'none',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
@@ -127,183 +134,222 @@ export default function App() {
             <img
               src={image}
               alt="Meme Base"
-              style={{
-                maxWidth: '100%',
-                maxHeight: '100%',
-                objectFit: 'contain',
-                filter: `brightness(${brightness}%) contrast(${contrast}%) grayscale(${grayscale}%)`
-              }}
+              crossOrigin="anonymous"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
 
-            {/* ข้อความบน */}
-            <div
-              style={{ ...memeTextStyle, top: `${topPos.y}px`, transform: `translateX(${topPos.x}px)` }}
-              onMouseDown={(e) => handleDrag(e, setTopPos, topPos)}
-            >
-              {topText}
-            </div>
+            {/* Draggable Bounding Boxes */}
+            {texts.map((t) => {
+              const selected = activeBox === t.id;
+              return (
+                <div
+                  key={t.id}
+                  onClick={(e) => { e.stopPropagation(); setActiveBox(t.id); }}
+                  onMouseDown={(e) => handleDrag(e, t.id, { x: t.x, y: t.y })}
+                  style={{
+                    position: 'absolute',
+                    top: `${t.y}px`,
+                    left: `${t.x}px`,
+                    width: `${t.w}px`,
+                    minHeight: `${t.h}px`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'move',
+                    border: selected ? '1px dashed #555' : '1px dashed rgba(255,255,255,0.4)',
+                    backgroundColor: selected ? 'rgba(255,255,255,0.15)' : 'transparent',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: 'Impact, Arial Black, sans-serif',
+                      fontSize: `${t.size}px`,
+                      color: t.color,
+                      textAlign: 'center',
+                      textTransform: 'uppercase',
+                      lineHeight: '1.1',
+                      wordBreak: 'break-word',
+                      textShadow: `2px 2px 0 ${t.stroke}, -2px -2px 0 ${t.stroke}, 2px -2px 0 ${t.stroke}, -2px 2px 0 ${t.stroke}`
+                    }}
+                  >
+                    {t.text}
+                  </span>
 
-            {/* ข้อความล่าง */}
-            <div
-              style={{ ...memeTextStyle, top: `${bottomPos.y}px`, transform: `translateX(${bottomPos.x}px)` }}
-              onMouseDown={(e) => handleDrag(e, setBottomPos, bottomPos)}
-            >
-              {bottomText}
-            </div>
+                  {selected && (
+                    <>
+                      <div style={{ ...nodeHandle, top: -5, left: -5 }} />
+                      <div style={{ ...nodeHandle, top: -5, right: -5 }} />
+                      <div style={{ ...nodeHandle, bottom: -5, left: -5 }} />
+                      <div style={{ ...nodeHandle, bottom: -5, right: -5 }} />
+                      <div style={{ ...nodeHandle, top: '50%', left: -5, transform: 'translateY(-50%)' }} />
+                      <div style={{ ...nodeHandle, top: '50%', right: -5, transform: 'translateY(-50%)' }} />
+                      <div style={{ ...nodeHandle, top: -5, left: '50%', transform: 'translateX(-50%)' }} />
+                      <div style={{ ...nodeHandle, bottom: -5, left: '50%', transform: 'translateX(-50%)' }} />
+                    </>
+                  )}
+                </div>
+              );
+            })}
 
-            {/* สติกเกอร์ */}
-            {stickers.map((s) => (
-              <div
-                key={s.id}
-                onDoubleClick={() => removeSticker(s.id)}
-                style={{
-                  position: 'absolute',
-                  top: `${s.y}px`,
-                  left: `${s.x}px`,
-                  fontSize: '40px',
-                  cursor: 'move',
-                  userSelect: 'none'
-                }}
-                onMouseDown={(e) =>
-                  handleDrag(
-                    e,
-                    (newPos) => {
-                      setStickers((prev) =>
-                        prev.map((item) => (item.id === s.id ? { ...item, ...newPos } : item))
-                      );
-                    },
-                    { x: s.x, y: s.y }
-                  )
-                }
-                title="Double click to delete"
-              >
-                {s.char}
+            {/* Imgflip Bottom Left Watermark */}
+            {watermark && (
+              <div style={{ position: 'absolute', bottom: '6px', left: '8px', color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontWeight: 'bold', textShadow: '1px 1px 1px #000' }}>
+                imgflip.com
               </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Imgflip Toolbar */}
+        <div style={{ flex: '1 1 42%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: 'bold', fontSize: '14px' }}>{selectedMeme.name}</span>
+            <div style={{ display: 'flex', border: '1px solid #ccc', borderRadius: '3px', overflow: 'hidden' }}>
+              <button style={tabStyle}>My</button>
+              <button style={tabStyle}>Hot</button>
+              <button style={{ ...tabStyle, background: '#e0e0e0', fontWeight: 'bold' }}>Top</button>
+            </div>
+          </div>
+
+          {/* Preset Buttons & Thumbnails Strip */}
+          <div style={{ display: 'flex', gap: '4px', alignItems: 'center', overflowX: 'auto', paddingBottom: '4px', borderBottom: '1px solid #eee' }}>
+            <button style={presetBtn}>Blank</button>
+            <button style={presetBtn}>✨ AI</button>
+            <button style={presetBtn}>🔀</button>
+            {TEMPLATES.map((tpl) => (
+              <img
+                key={tpl.id}
+                src={tpl.url}
+                alt={tpl.name}
+                onClick={() => { setSelectedMeme(tpl); setImage(tpl.url); }}
+                style={{
+                  width: '48px',
+                  height: '36px',
+                  objectFit: 'cover',
+                  cursor: 'pointer',
+                  border: selectedMeme.id === tpl.id ? '2px solid #0088cc' : '1px solid #ccc'
+                }}
+              />
             ))}
           </div>
 
-          <button
-            onClick={handleDownload}
-            style={{
-              width: '100%',
-              marginTop: '15px',
-              padding: '12px',
-              backgroundColor: '#28a745',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '16px',
-              fontWeight: 'bold',
-              cursor: 'pointer'
-            }}
-          >
-            Download Meme (PNG)
-          </button>
-        </div>
-
-        {/* แผงควบคุมและเครื่องมือ */}
-        <div style={{ flex: 1, minWidth: '320px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div>
-            <label><strong>Template / Upload:</strong></label>
-            <input type="file" accept="image/*" onChange={handleUpload} style={{ display: 'block', margin: '6px 0' }} />
-            <div style={{ display: 'flex', gap: '6px' }}>
-              {TEMPLATES.map((t) => (
-                <button key={t.id} onClick={() => setImage(t.url)} style={{ padding: '6px 12px', cursor: 'pointer' }}>
-                  {t.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label><strong>Top Text:</strong></label>
-            <input
-              type="text"
-              value={topText}
-              onChange={(e) => setTopText(e.target.value)}
-              style={{ width: '100%', padding: '6px', boxSizing: 'border-box' }}
-            />
-          </div>
-
-          <div>
-            <label><strong>Bottom Text:</strong></label>
-            <input
-              type="text"
-              value={bottomText}
-              onChange={(e) => setBottomText(e.target.value)}
-              style={{ width: '100%', padding: '6px', boxSizing: 'border-box' }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <div>
-              <label><strong>Size: </strong></label>
+          {/* Text Input Rows */}
+          {texts.map((t, idx) => (
+            <div key={t.id} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
               <input
-                type="number"
-                value={fontSize}
-                onChange={(e) => setFontSize(Number(e.target.value))}
-                style={{ width: '60px', padding: '4px' }}
+                type="text"
+                placeholder={`Text #${idx + 1}`}
+                value={t.text}
+                onFocus={() => setActiveBox(t.id)}
+                onChange={(e) => updateText(t.id, 'text', e.target.value)}
+                style={{ flex: 1, padding: '7px 10px', border: '1px solid #ccc', borderRadius: '3px', fontSize: '13px' }}
               />
+              <input
+                type="color"
+                value={t.color}
+                onChange={(e) => updateText(t.id, 'color', e.target.value)}
+                style={colorBox}
+                title="Font color"
+              />
+              <input
+                type="color"
+                value={t.stroke}
+                onChange={(e) => updateText(t.id, 'stroke', e.target.value)}
+                style={{ ...colorBox, background: '#000' }}
+                title="Outline color"
+              />
+              <button
+                onClick={() => {
+                  const s = prompt('Size (px):', t.size);
+                  if (s) updateText(t.id, 'size', Number(s));
+                }}
+                style={gearBtn}
+                title="Font settings"
+              >
+                ⚙
+              </button>
             </div>
-            <div>
-              <label><strong>Color: </strong></label>
-              <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} />
+          ))}
+
+          {/* Action Tools Row */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
+            <span style={{ fontSize: '11px', color: '#555' }}>
+              Tip: If you <a href="#login" style={{ color: '#0088cc' }}>log in</a>, your memes will be saved in your account
+            </span>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <button style={toolActionBtn}>✨ AI</button>
+              <button style={toolActionBtn}>✨ Effects</button>
+              <button
+                style={toolActionBtn}
+                onClick={() =>
+                  setTexts([
+                    ...texts,
+                    { id: Date.now(), text: '', color: '#ffffff', stroke: '#000000', size: 28, x: 100, y: 150, w: 160, h: 80 }
+                  ])
+                }
+              >
+                Add Text
+              </button>
             </div>
           </div>
 
-          <div>
-            <label><strong>Add Emojis:</strong></label>
-            <div style={{ display: 'flex', gap: '8px', fontSize: '20px', marginTop: '4px' }}>
-              {['😂', '🔥', '🕶️', '💀', '💯', '❤️'].map((emoji) => (
-                <button
-                  key={emoji}
-                  onClick={() => addEmoji(emoji)}
-                  style={{ fontSize: '20px', cursor: 'pointer', padding: '2px 8px' }}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
+          {/* Imgflip Settings Checkboxes */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '12px', color: '#333', marginTop: '4px' }}>
+            <label><input type="checkbox" /> Use original image resolution (higher)</label>
+            <label><input type="checkbox" /> Private (must download image to save or share)</label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <input type="checkbox" checked={watermark} onChange={(e) => setWatermark(e.target.checked)} />
+              Watermark <span style={{ background: '#eef8ff', border: '1px solid #bce8f1', padding: '0 4px', color: '#31708f', borderRadius: '3px' }}>imgflip.com</span> bottom left
+            </label>
           </div>
 
-          <div style={{ borderTop: '1px solid #ddd', paddingTop: '8px' }}>
-            <label><strong>Filters:</strong></label>
-            <div>
-              <small>Brightness: {brightness}%</small>
-              <input
-                type="range"
-                min="50"
-                max="150"
-                value={brightness}
-                onChange={(e) => setBrightness(e.target.value)}
-                style={{ width: '100%' }}
-              />
-            </div>
-            <div>
-              <small>Contrast: {contrast}%</small>
-              <input
-                type="range"
-                min="50"
-                max="150"
-                value={contrast}
-                onChange={(e) => setContrast(e.target.value)}
-                style={{ width: '100%' }}
-              />
-            </div>
-            <div>
-              <small>Grayscale: {grayscale}%</small>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={grayscale}
-                onChange={(e) => setGrayscale(e.target.value)}
-                style={{ width: '100%' }}
-              />
-            </div>
+          {/* Main Action Buttons */}
+          <div style={{ display: 'flex', gap: '10px', marginTop: '10px', alignItems: 'center' }}>
+            <button
+              onClick={handleGenerate}
+              style={{
+                flex: 1,
+                backgroundColor: '#00b0f0',
+                color: '#fff',
+                fontWeight: 'bold',
+                border: 'none',
+                borderRadius: '3px',
+                padding: '11px',
+                fontSize: '15px',
+                cursor: 'pointer'
+              }}
+            >
+              Generate Meme
+            </button>
+            <button
+              onClick={handleReset}
+              style={{
+                backgroundColor: '#fff',
+                color: '#333',
+                border: '1px solid #ccc',
+                borderRadius: '3px',
+                padding: '10px 18px',
+                fontSize: '13px',
+                cursor: 'pointer'
+              }}
+            >
+              Reset
+            </button>
           </div>
+
         </div>
       </div>
     </div>
   );
 }
+
+const outlineBtn = { background: '#fff', border: '1px solid #ccc', padding: '6px 14px', fontSize: '13px', cursor: 'pointer', borderRadius: '3px' };
+const toolBtn = { background: '#fff', border: '1px solid #ccc', padding: '4px 8px', fontSize: '12px', cursor: 'pointer', borderRadius: '3px' };
+const tabStyle = { background: '#fff', border: 'none', padding: '4px 8px', fontSize: '12px', cursor: 'pointer' };
+const presetBtn = { border: '1px dashed #bbb', background: '#fafafa', padding: '8px 10px', fontSize: '11px', cursor: 'pointer', borderRadius: '2px' };
+const colorBox = { width: '30px', height: '30px', border: '1px solid #ccc', borderRadius: '3px', cursor: 'pointer', padding: '0' };
+const gearBtn = { width: '30px', height: '30px', border: '1px solid #ccc', borderRadius: '3px', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px' };
+const toolActionBtn = { background: '#fff', border: '1px solid #ccc', borderRadius: '3px', padding: '3px 8px', fontSize: '12px', cursor: 'pointer' };
+const nodeHandle = { position: 'absolute', width: '9px', height: '9px', background: '#fff', border: '1px solid #222', boxSizing: 'border-box' };
