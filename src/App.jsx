@@ -2,35 +2,42 @@ import { useState, useRef } from 'react';
 import { toPng } from 'html-to-image';
 
 const TEMPLATES = [
-  { id: 1, name: 'Sparta', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Leonidas_I.jpg/640px-Leonidas_I.jpg' },
-  { id: 2, name: 'Cat', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/640px-Cat03.jpg' },
-  { id: 3, name: 'Dog', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/YellowLabradorLooking_new.jpg/640px-YellowLabradorLooking_new.jpg' }
+  { 
+    id: 1, 
+    name: 'Smile', 
+    url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='500' height='400' viewBox='0 0 500 400'><rect width='100%' height='100%' fill='%23f1c40f'/><circle cx='180' cy='150' r='30' fill='%232c3e50'/><circle cx='320' cy='150' r='30' fill='%232c3e50'/><path d='M 150 250 Q 250 340 350 250' stroke='%232c3e50' stroke-width='20' fill='none' stroke-linecap='round'/></svg>"
+  },
+  { 
+    id: 2, 
+    name: 'Cool Cat', 
+    url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='500' height='400' viewBox='0 0 500 400'><rect width='100%' height='100%' fill='%233498db'/><polygon points='140,80 180,180 100,160' fill='%23e67e22'/><polygon points='360,80 320,180 400,160' fill='%23e67e22'/><circle cx='250' cy='220' r='100' fill='%23e67e22'/><circle cx='210' cy='200' r='18' fill='%23fff'/><circle cx='290' cy='200' r='18' fill='%23fff'/><polygon points='250,230 240,245 260,245' fill='%23e74c3c'/></svg>"
+  },
+  { 
+    id: 3, 
+    name: 'Surprise Dog', 
+    url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='500' height='400' viewBox='0 0 500 400'><rect width='100%' height='100%' fill='%23e74c3c'/><ellipse cx='250' cy='230' rx='110' ry='90' fill='%23ecf0f1'/><ellipse cx='160' cy='180' rx='25' ry='55' fill='%23bdc3c7'/><ellipse cx='340' cy='180' rx='25' ry='55' fill='%23bdc3c7'/><circle cx='210' cy='210' r='14' fill='%232c3e50'/><circle cx='290' cy='210' r='14' fill='%232c3e50'/><ellipse cx='250' cy='260' rx='25' ry='18' fill='%23e67e22'/></svg>"
+  }
 ];
 
 export default function App() {
   const [image, setImage] = useState(TEMPLATES[0].url);
   
-  // จัดการข้อความ
   const [topText, setTopText] = useState('TOP TEXT');
   const [bottomText, setBottomText] = useState('BOTTOM TEXT');
   const [fontSize, setFontSize] = useState(32);
   const [textColor, setTextColor] = useState('#ffffff');
   
-  // ตำแหน่งลากวางข้อความ
   const [topPos, setTopPos] = useState({ x: 0, y: 15 });
   const [bottomPos, setBottomPos] = useState({ x: 0, y: 320 });
 
-  // ฟิลเตอร์รูป
   const [brightness, setBrightness] = useState(100);
   const [contrast, setContrast] = useState(100);
   const [grayscale, setGrayscale] = useState(0);
 
-  // สติกเกอร์ / อีโมจิ
   const [stickers, setStickers] = useState([]);
 
   const memeRef = useRef(null);
 
-  // อัปโหลดรูปจากเครื่อง
   const handleUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -38,17 +45,14 @@ export default function App() {
     }
   };
 
-  // เพิ่มอีโมจิ
   const addEmoji = (emoji) => {
     setStickers([...stickers, { id: Date.now(), char: emoji, x: 50, y: 50 }]);
   };
 
-  // ลบสติกเกอร์
   const removeSticker = (id) => {
     setStickers(stickers.filter((s) => s.id !== id));
   };
 
-  // ฟังก์ชันลากวัตถุ (Drag)
   const handleDrag = (e, setPosition, currentPos) => {
     const startX = e.clientX;
     const startY = e.clientY;
@@ -71,7 +75,6 @@ export default function App() {
     window.addEventListener('mouseup', onMouseUp);
   };
 
-  // เซฟและดาวน์โหลดรูป
   const handleDownload = async () => {
     if (!memeRef.current) return;
     try {
@@ -105,7 +108,7 @@ export default function App() {
       <h2 style={{ textAlign: 'center' }}>Tiny Meme Generator</h2>
 
       <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-        {/* ฝั่งแสดงตัวอย่าง Meme */}
+        {/* ส่วนแสดงตัวอย่างรูปมีม */}
         <div style={{ flex: 1, minWidth: '350px' }}>
           <div
             ref={memeRef}
@@ -148,7 +151,7 @@ export default function App() {
               {bottomText}
             </div>
 
-            {/* รายการสติกเกอร์ / อีโมจิ */}
+            {/* สติกเกอร์ */}
             {stickers.map((s) => (
               <div
                 key={s.id}
@@ -198,22 +201,20 @@ export default function App() {
           </button>
         </div>
 
-        {/* ฝั่งเครื่องมือปรับแต่ง (Controls) */}
+        {/* แผงควบคุมและเครื่องมือ */}
         <div style={{ flex: 1, minWidth: '320px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {/* เลือกรูป */}
           <div>
             <label><strong>Template / Upload:</strong></label>
             <input type="file" accept="image/*" onChange={handleUpload} style={{ display: 'block', margin: '6px 0' }} />
             <div style={{ display: 'flex', gap: '6px' }}>
               {TEMPLATES.map((t) => (
-                <button key={t.id} onClick={() => setImage(t.url)} style={{ padding: '4px 8px' }}>
+                <button key={t.id} onClick={() => setImage(t.url)} style={{ padding: '6px 12px', cursor: 'pointer' }}>
                   {t.name}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* ปรับแต่งข้อความ */}
           <div>
             <label><strong>Top Text:</strong></label>
             <input
@@ -250,9 +251,8 @@ export default function App() {
             </div>
           </div>
 
-          {/* สติกเกอร์ */}
           <div>
-            <label><strong>Add Emojis (Click to add, Double-click on image to remove):</strong></label>
+            <label><strong>Add Emojis:</strong></label>
             <div style={{ display: 'flex', gap: '8px', fontSize: '20px', marginTop: '4px' }}>
               {['😂', '🔥', '🕶️', '💀', '💯', '❤️'].map((emoji) => (
                 <button
@@ -266,7 +266,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* ฟิลเตอร์ภาพ */}
           <div style={{ borderTop: '1px solid #ddd', paddingTop: '8px' }}>
             <label><strong>Filters:</strong></label>
             <div>
